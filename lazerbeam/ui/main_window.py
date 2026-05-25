@@ -62,6 +62,8 @@ def run_app() -> None:
                 log(f"Cleaned URL: {clean_url(url)}")
                 result = capture_url(url, Path(config.vault_path), config, profile)
                 log(f"Saved: {result.output_plan.note_path}")
+                if result.item.media:
+                    log(f"Media saved: {len(result.item.media)} file(s) in {result.output_plan.media_folder}")
             except Exception as exc:
                 log(f"Failed: {url} - {type(exc).__name__}: {exc}")
 

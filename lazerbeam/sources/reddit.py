@@ -5,7 +5,8 @@ from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
 from lazerbeam.markdown_cleaner import strip_basic_html
-from lazerbeam.models import CapturedItem, CaptureProfile
+from lazerbeam.media_downloader import extract_markdown_media, is_media_url
+from lazerbeam.models import CapturedItem, CaptureProfile, MediaItem
 from lazerbeam.sources.base import SourceProvider
 
 
@@ -37,6 +38,7 @@ class RedditProvider(SourceProvider):
             body=strip_basic_html(post.get("selftext", "")),
             author=post.get("author", ""),
             comments=comments,
+            media=self._extract_post_media(post) if profile.include_media else [],
             metadata={
                 "subreddit": post.get("subreddit", "reddit"),
                 "score": post.get("score", 0),
@@ -68,6 +70,7 @@ class RedditProvider(SourceProvider):
             url=url,
             body=strip_basic_html(body),
             author=revision_by.get("data", {}).get("name", ""),
+            media=extract_markdown_media(body, url),
             metadata={
                 "subreddit": subreddit,
                 "wiki_page": page_name,
@@ -89,6 +92,35 @@ class RedditProvider(SourceProvider):
             if len(parts) > wiki_index + 1:
                 page_name = "/".join(parts[wiki_index + 1 :])
         return subreddit, page_name
+
+    def _extract_post_media(self, post: dict) -> list[MediaItem]:
+        media: list[MediaItem] = []
+        post_url = post.get("url_overridden_by_dest") or post.get("url") or ""
+        if post_url and is_media_url(post_url):
+            media.append(MediaItem(url=post_url))
+
+        reddit_video = (post.get("secure_media") or {}).get("reddit_video") or {}
+        fallback_url = reddit_video.get("fallback_url")
+        if fallback_url:
+            media.append(MediaItem(url=fallback_url))
+
+        for image in (post.get("preview") or {}).get("images", []):
+            source_url = image.get("source", {}).get("url")
+            if source_url:
+                media.append(MediaItem(url=source_url.replace("&amp;", "&")))
+
+        media.extend(extract_markdown_media(post.get("selftext", ""), post.get("permalink", "")))
+        return self._dedupe_media(media)
+
+    def _dedupe_media(self, media: list[MediaItem]) -> list[MediaItem]:
+        seen: set[str] = set()
+        unique: list[MediaItem] = []
+        for item in media:
+            if item.url in seen:
+                continue
+            seen.add(item.url)
+            unique.append(item)
+        return unique
 
     def _extract_comments(self, children: list[dict], limit: int) -> list[str]:
         comments: list[str] = []

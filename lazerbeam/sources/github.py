@@ -4,6 +4,7 @@ import json
 from urllib.parse import urlparse
 from urllib.request import Request, urlopen
 
+from lazerbeam.media_downloader import extract_markdown_media
 from lazerbeam.models import CapturedItem, CaptureProfile
 from lazerbeam.sources.base import SourceProvider
 
@@ -20,13 +21,15 @@ class GitHubProvider(SourceProvider):
         readme_api = f"https://api.github.com/repos/{owner}/{repo}/readme"
         metadata = self._get_json(repo_api)
         readme = self._get_json(readme_api)
-        readme_text = self._get_text(readme["download_url"]) if readme.get("download_url") else ""
+        readme_url = readme.get("download_url", "")
+        readme_text = self._get_text(readme_url) if readme_url else ""
         return CapturedItem(
             source="github",
             title=f"{owner}/{repo}",
             url=url,
             body=readme_text,
             author=owner,
+            media=extract_markdown_media(readme_text, readme_url) if profile.include_media else [],
             metadata={
                 "owner": owner,
                 "repo": repo,

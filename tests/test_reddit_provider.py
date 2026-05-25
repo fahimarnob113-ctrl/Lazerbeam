@@ -40,6 +40,45 @@ class RedditProviderTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Reddit post response"):
             provider.fetch("https://www.reddit.com/r/test/comments/abc/title", CaptureProfile())
 
+    def test_fetch_post_extracts_image_and_video_media(self):
+        provider = FakeRedditProvider(
+            [
+                {
+                    "data": {
+                        "children": [
+                            {
+                                "data": {
+                                    "title": "Media Post",
+                                    "selftext": "![extra](https://example.com/extra.jpg)",
+                                    "author": "op",
+                                    "subreddit": "test",
+                                    "score": 1,
+                                    "num_comments": 0,
+                                    "url_overridden_by_dest": "https://i.redd.it/image.png",
+                                    "secure_media": {
+                                        "reddit_video": {
+                                            "fallback_url": "https://v.redd.it/abc/DASH_720.mp4?source=fallback"
+                                        }
+                                    },
+                                }
+                            }
+                        ]
+                    }
+                }
+            ]
+        )
+
+        item = provider.fetch("https://www.reddit.com/r/test/comments/abc/title", CaptureProfile())
+
+        self.assertEqual(
+            [media.url for media in item.media],
+            [
+                "https://i.redd.it/image.png",
+                "https://v.redd.it/abc/DASH_720.mp4?source=fallback",
+                "https://example.com/extra.jpg",
+            ],
+        )
+
 
 if __name__ == "__main__":
     unittest.main()

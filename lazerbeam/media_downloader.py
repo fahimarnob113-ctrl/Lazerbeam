@@ -1,11 +1,27 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
-from urllib.parse import urlparse
-from urllib.request import urlretrieve
+from urllib.parse import urljoin, urlparse
+from urllib.request import Request, urlopen
 
 from lazerbeam.models import MediaItem
 from lazerbeam.organizer import safe_filename
+
+
+MEDIA_EXTENSIONS = {
+    ".apng",
+    ".avif",
+    ".gif",
+    ".jpeg",
+    ".jpg",
+    ".m4v",
+    ".mov",
+    ".mp4",
+    ".png",
+    ".webm",
+    ".webp",
+}
 
 
 def filename_from_url(url: str, fallback: str = "media") -> str:
@@ -13,12 +29,77 @@ def filename_from_url(url: str, fallback: str = "media") -> str:
     return safe_filename(name or fallback)
 
 
+def is_media_url(url: str) -> bool:
+    return Path(urlparse(url).path).suffix.lower() in MEDIA_EXTENSIONS
+
+
+def extract_markdown_media(markdown: str, base_url: str = "") -> list[MediaItem]:
+    urls: list[str] = []
+    urls.extend(re.findall(r"!\[[^\]]*\]\(([^)]+)\)", markdown))
+    urls.extend(re.findall(r"<img[^>]+src=[\"']([^\"']+)[\"']", markdown, flags=re.IGNORECASE))
+
+    media: list[MediaItem] = []
+    for raw_url in urls:
+        clean = raw_url.strip()
+        if not clean or clean.startswith("data:"):
+            continue
+        resolved = _resolve_media_url(clean, base_url)
+        if is_media_url(resolved):
+            media.append(MediaItem(url=resolved))
+    return _dedupe_media(media)
+
+
+def prepare_media(media: list[MediaItem], max_items: int) -> list[MediaItem]:
+    prepared: list[MediaItem] = []
+    used_names: set[str] = set()
+    for index, item in enumerate(media[:max_items], start=1):
+        item.filename = _unique_filename(item.filename or filename_from_url(item.url, f"media-{index}"), used_names)
+        prepared.append(item)
+    return prepared
+
+
 def download_media(media: list[MediaItem], folder: Path, max_items: int) -> list[MediaItem]:
     folder.mkdir(parents=True, exist_ok=True)
     downloaded: list[MediaItem] = []
-    for item in media[:max_items]:
-        item.filename = item.filename or filename_from_url(item.url)
+    for item in prepare_media(media, max_items):
         item.local_path = folder / item.filename
-        urlretrieve(item.url, item.local_path)
+        _download_file(item.url, item.local_path)
         downloaded.append(item)
     return downloaded
+
+
+def _download_file(url: str, destination: Path) -> None:
+    request = Request(url, headers={"User-Agent": "Lazerbeam Prototype"})
+    with urlopen(request, timeout=30) as response:
+        destination.write_bytes(response.read())
+
+
+def _resolve_media_url(url: str, base_url: str) -> str:
+    if url.startswith("//"):
+        return f"https:{url}"
+    if urlparse(url).scheme:
+        return url
+    return urljoin(base_url, url)
+
+
+def _dedupe_media(media: list[MediaItem]) -> list[MediaItem]:
+    seen: set[str] = set()
+    unique: list[MediaItem] = []
+    for item in media:
+        if item.url in seen:
+            continue
+        seen.add(item.url)
+        unique.append(item)
+    return unique
+
+
+def _unique_filename(filename: str, used_names: set[str]) -> str:
+    candidate = filename
+    stem = Path(filename).stem or "media"
+    suffix = Path(filename).suffix
+    counter = 2
+    while candidate.lower() in used_names:
+        candidate = f"{stem}-{counter}{suffix}"
+        counter += 1
+    used_names.add(candidate.lower())
+    return candidate
