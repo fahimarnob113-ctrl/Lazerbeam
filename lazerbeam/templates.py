@@ -30,10 +30,10 @@ def render_markdown(item: CapturedItem, plan: OutputPlan) -> str:
         "$frontmatter\n\n"
         "# $title\n\n"
         "$body\n\n"
-        "## Source\n\n"
-        "$url\n\n"
         "$comments_section"
         "$media_section"
+        "## Source\n\n"
+        "$url\n"
     )
     return template.substitute(
         frontmatter=render_frontmatter(item, plan),

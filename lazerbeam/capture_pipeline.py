@@ -41,11 +41,12 @@ def capture_url(
 
     item = PROVIDERS[source].fetch(cleaned_url, profile)
     plan = decide_output_plan(vault_path, item, profile, config)
+    media_prefix = plan.note_path.stem
     if profile.include_media and item.media:
         if dry_run:
-            item.media = prepare_media(item.media, profile.max_images)
+            item.media = prepare_media(item.media, profile.max_images, media_prefix)
         else:
-            item.media = download_media(item.media, plan.media_folder, profile.max_images)
+            item.media = download_media(item.media, plan.media_folder, profile.max_images, media_prefix)
     markdown = render_markdown(item, plan)
 
     if not dry_run:

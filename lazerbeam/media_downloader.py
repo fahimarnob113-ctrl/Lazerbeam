@@ -49,19 +49,23 @@ def extract_markdown_media(markdown: str, base_url: str = "") -> list[MediaItem]
     return _dedupe_media(media)
 
 
-def prepare_media(media: list[MediaItem], max_items: int) -> list[MediaItem]:
+def prepare_media(media: list[MediaItem], max_items: int, filename_prefix: str = "") -> list[MediaItem]:
     prepared: list[MediaItem] = []
     used_names: set[str] = set()
+    safe_prefix = safe_filename(filename_prefix).strip("_ ")
     for index, item in enumerate(media[:max_items], start=1):
-        item.filename = _unique_filename(item.filename or filename_from_url(item.url, f"media-{index}"), used_names)
+        base_filename = item.filename or filename_from_url(item.url, f"media-{index}")
+        if safe_prefix:
+            base_filename = _prefixed_filename(base_filename, safe_prefix)
+        item.filename = _unique_filename(base_filename, used_names)
         prepared.append(item)
     return prepared
 
 
-def download_media(media: list[MediaItem], folder: Path, max_items: int) -> list[MediaItem]:
+def download_media(media: list[MediaItem], folder: Path, max_items: int, filename_prefix: str = "") -> list[MediaItem]:
     folder.mkdir(parents=True, exist_ok=True)
     downloaded: list[MediaItem] = []
-    for item in prepare_media(media, max_items):
+    for item in prepare_media(media, max_items, filename_prefix):
         item.local_path = folder / item.filename
         _download_file(item.url, item.local_path)
         downloaded.append(item)
@@ -103,3 +107,12 @@ def _unique_filename(filename: str, used_names: set[str]) -> str:
         counter += 1
     used_names.add(candidate.lower())
     return candidate
+
+
+def _prefixed_filename(filename: str, prefix: str) -> str:
+    path = Path(filename)
+    stem = safe_filename(path.stem or "media")
+    suffix = path.suffix
+    if stem.lower().startswith(prefix.lower()):
+        return f"{stem}{suffix}"
+    return f"{prefix} - {stem}{suffix}"
