@@ -14,7 +14,7 @@ class TemplateTests(unittest.TestCase):
         self.assertIn("# Repo", markdown)
         self.assertIn("Body", markdown)
 
-    def test_media_section_appears_above_source(self):
+    def test_media_section_appears_near_top_before_body_and_source(self):
         item = CapturedItem(
             source="reddit",
             title="Post",
@@ -25,6 +25,7 @@ class TemplateTests(unittest.TestCase):
         plan = OutputPlan(note_path=Path("Post.md"), media_folder=Path("_media"), tags=["lazerbeam", "reddit"])
         markdown = render_markdown(item, plan)
 
+        self.assertLess(markdown.index("## Media"), markdown.index("Body"))
         self.assertLess(markdown.index("## Media"), markdown.index("## Source"))
         self.assertIn("![[Post - image.png]]", markdown)
 

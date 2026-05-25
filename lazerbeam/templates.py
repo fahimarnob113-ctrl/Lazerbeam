@@ -29,9 +29,9 @@ def render_markdown(item: CapturedItem, plan: OutputPlan) -> str:
     template = Template(
         "$frontmatter\n\n"
         "# $title\n\n"
+        "$media_section"
         "$body\n\n"
         "$comments_section"
-        "$media_section"
         "## Source\n\n"
         "$url\n"
     )
