@@ -19,6 +19,7 @@ MEDIA_EXTENSIONS = {
     ".mov",
     ".mp4",
     ".png",
+    ".svg",
     ".webm",
     ".webp",
 }
@@ -70,6 +71,29 @@ def download_media(media: list[MediaItem], folder: Path, max_items: int, filenam
         _download_file(item.url, item.local_path)
         downloaded.append(item)
     return downloaded
+
+
+def localize_markdown_media(markdown: str, media: list[MediaItem], base_url: str = "") -> str:
+    filenames_by_url = {item.url: item.filename for item in media if item.filename}
+
+    def replace_markdown(match: re.Match) -> str:
+        original_url = match.group(2).strip()
+        resolved = _resolve_media_url(original_url, base_url)
+        filename = filenames_by_url.get(resolved)
+        if not filename:
+            return match.group(0)
+        return f"![[{filename}]]"
+
+    def replace_html(match: re.Match) -> str:
+        original_url = match.group(1).strip()
+        resolved = _resolve_media_url(original_url, base_url)
+        filename = filenames_by_url.get(resolved)
+        if not filename:
+            return match.group(0)
+        return f"![[{filename}]]"
+
+    markdown = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", replace_markdown, markdown)
+    return re.sub(r"<img[^>]+src=[\"']([^\"']+)[\"'][^>]*>", replace_html, markdown, flags=re.IGNORECASE)
 
 
 def _download_file(url: str, destination: Path) -> None:

@@ -4,7 +4,7 @@ from pathlib import Path
 
 from lazerbeam.config import AppConfig
 from lazerbeam.history import CaptureHistory
-from lazerbeam.media_downloader import download_media, prepare_media
+from lazerbeam.media_downloader import download_media, localize_markdown_media, prepare_media
 from lazerbeam.models import CaptureHistoryEntry, CaptureProfile, CaptureResult
 from lazerbeam.obsidian_writer import write_note
 from lazerbeam.organizer import decide_output_plan
@@ -47,6 +47,8 @@ def capture_url(
             item.media = prepare_media(item.media, profile.max_images, media_prefix)
         else:
             item.media = download_media(item.media, plan.media_folder, profile.max_images, media_prefix)
+        item.body = localize_markdown_media(item.body, item.media, str(item.metadata.get("media_base_url", "")))
+        item.metadata["media_embedded_in_body"] = True
     markdown = render_markdown(item, plan)
 
     if not dry_run:

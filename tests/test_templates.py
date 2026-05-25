@@ -29,6 +29,21 @@ class TemplateTests(unittest.TestCase):
         self.assertLess(markdown.index("## Media"), markdown.index("## Source"))
         self.assertIn("![[Post - image.png]]", markdown)
 
+    def test_media_gallery_is_skipped_when_media_is_embedded_in_body(self):
+        item = CapturedItem(
+            source="github",
+            title="Repo",
+            url="https://github.com/a/b",
+            body="Body ![[Repo - logo.svg]]",
+            media=[MediaItem(url="https://example.com/logo.svg", filename="Repo - logo.svg")],
+            metadata={"media_embedded_in_body": True},
+        )
+        plan = OutputPlan(note_path=Path("Repo.md"), media_folder=Path("_images"), tags=["lazerbeam", "github"])
+        markdown = render_markdown(item, plan)
+
+        self.assertNotIn("## Media", markdown)
+        self.assertIn("Body ![[Repo - logo.svg]]", markdown)
+
 
 if __name__ == "__main__":
     unittest.main()

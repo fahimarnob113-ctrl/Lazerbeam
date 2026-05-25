@@ -75,6 +75,7 @@ class RedditProvider(SourceProvider):
                 "subreddit": subreddit,
                 "wiki_page": page_name,
                 "content_type": "wiki",
+                "media_base_url": url,
                 "score": 0,
                 "comment_count": 0,
             },

@@ -25,7 +25,9 @@ def render_frontmatter(item: CapturedItem, plan: OutputPlan) -> str:
 
 def render_markdown(item: CapturedItem, plan: OutputPlan) -> str:
     comments = "\n\n".join(f"- {comment}" for comment in item.comments)
-    media = "\n".join(f"![[{media.filename}]]" for media in item.media if media.filename)
+    media = ""
+    if not item.metadata.get("media_embedded_in_body"):
+        media = "\n".join(f"![[{media.filename}]]" for media in item.media if media.filename)
     template = Template(
         "$frontmatter\n\n"
         "# $title\n\n"

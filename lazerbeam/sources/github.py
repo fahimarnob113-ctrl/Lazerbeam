@@ -33,6 +33,7 @@ class GitHubProvider(SourceProvider):
             metadata={
                 "owner": owner,
                 "repo": repo,
+                "media_base_url": readme_url,
                 "stars": metadata.get("stargazers_count", 0),
                 "language": metadata.get("language", ""),
                 "license": (metadata.get("license") or {}).get("spdx_id", ""),
