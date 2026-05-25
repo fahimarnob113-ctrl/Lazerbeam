@@ -13,13 +13,32 @@ URL -> provider -> organizer -> template -> Obsidian writer
 ## Run
 
 ```powershell
-python app.py
+.\scripts\run_app.cmd
 ```
 
 ## Test
 
 ```powershell
-python -m unittest discover -s tests
+.\scripts\run_tests.cmd
+```
+
+## First-Time Local Setup
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+## Test Vault
+
+Use a disposable test vault while developing:
+
+```text
+test-vault/
+  reddit-notes/
+  reddit-media/
+  github-notes/
+  lazerbeam-inbox/
 ```
 
 ## Package Later
