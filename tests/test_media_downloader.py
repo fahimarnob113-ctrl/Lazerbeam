@@ -35,6 +35,12 @@ class MediaDownloaderTests(unittest.TestCase):
 
         self.assertEqual(media[0].url, "https://raw.githubusercontent.com/owner/repo/main/repo.svg")
 
+    def test_extract_reference_style_markdown_media(self):
+        markdown = "![repo][repo.svg]\n[repo.svg]: icons/repo.svg"
+        media = extract_markdown_media(markdown, "https://raw.githubusercontent.com/owner/repo/main/README.md")
+
+        self.assertEqual(media[0].url, "https://raw.githubusercontent.com/owner/repo/main/icons/repo.svg")
+
     def test_localize_markdown_media_rewrites_markdown_and_html_images(self):
         markdown = "![Repo](repo.svg)\n<img src=\"open.svg\">"
         media = [
@@ -52,6 +58,25 @@ class MediaDownloaderTests(unittest.TestCase):
 
         self.assertIn("![[free-lunch - Index - repo.svg]]", localized)
         self.assertIn("![[free-lunch - Index - open.svg]]", localized)
+
+    def test_localize_reference_style_markdown_media(self):
+        markdown = "[![repo][repo.svg]](https://github.com/example/repo) ![open][open.svg]\n[repo.svg]: icons/repo.svg\n[open.svg]: icons/open.svg"
+        media = [
+            MediaItem(
+                url="https://raw.githubusercontent.com/owner/repo/main/icons/repo.svg",
+                filename="free-lunch - Index - repo.svg",
+            ),
+            MediaItem(
+                url="https://raw.githubusercontent.com/owner/repo/main/icons/open.svg",
+                filename="free-lunch - Index - open.svg",
+            ),
+        ]
+
+        localized = localize_markdown_media(markdown, media, "https://raw.githubusercontent.com/owner/repo/main/README.md")
+
+        self.assertIn("[![[free-lunch - Index - repo.svg]]](https://github.com/example/repo)", localized)
+        self.assertIn("![[free-lunch - Index - open.svg]]", localized)
+        self.assertNotIn("![repo][repo.svg]", localized)
 
 
 if __name__ == "__main__":

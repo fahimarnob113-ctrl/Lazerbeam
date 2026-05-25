@@ -36,7 +36,12 @@ def is_media_url(url: str) -> bool:
 
 def extract_markdown_media(markdown: str, base_url: str = "") -> list[MediaItem]:
     urls: list[str] = []
+    references = _extract_reference_definitions(markdown)
     urls.extend(re.findall(r"!\[[^\]]*\]\(([^)]+)\)", markdown))
+    for reference_id in re.findall(r"!\[[^\]]*\]\[([^\]]+)\]", markdown):
+        referenced_url = references.get(_normalize_reference_id(reference_id))
+        if referenced_url:
+            urls.append(referenced_url)
     urls.extend(re.findall(r"<img[^>]+src=[\"']([^\"']+)[\"']", markdown, flags=re.IGNORECASE))
 
     media: list[MediaItem] = []
@@ -75,6 +80,7 @@ def download_media(media: list[MediaItem], folder: Path, max_items: int, filenam
 
 def localize_markdown_media(markdown: str, media: list[MediaItem], base_url: str = "") -> str:
     filenames_by_url = {item.url: item.filename for item in media if item.filename}
+    references = _extract_reference_definitions(markdown)
 
     def replace_markdown(match: re.Match) -> str:
         original_url = match.group(2).strip()
@@ -92,7 +98,19 @@ def localize_markdown_media(markdown: str, media: list[MediaItem], base_url: str
             return match.group(0)
         return f"![[{filename}]]"
 
+    def replace_reference(match: re.Match) -> str:
+        reference_id = match.group(2).strip()
+        referenced_url = references.get(_normalize_reference_id(reference_id))
+        if not referenced_url:
+            return match.group(0)
+        resolved = _resolve_media_url(referenced_url, base_url)
+        filename = filenames_by_url.get(resolved)
+        if not filename:
+            return match.group(0)
+        return f"![[{filename}]]"
+
     markdown = re.sub(r"!\[([^\]]*)\]\(([^)]+)\)", replace_markdown, markdown)
+    markdown = re.sub(r"!\[([^\]]*)\]\[([^\]]+)\]", replace_reference, markdown)
     return re.sub(r"<img[^>]+src=[\"']([^\"']+)[\"'][^>]*>", replace_html, markdown, flags=re.IGNORECASE)
 
 
@@ -119,6 +137,17 @@ def _dedupe_media(media: list[MediaItem]) -> list[MediaItem]:
         seen.add(item.url)
         unique.append(item)
     return unique
+
+
+def _extract_reference_definitions(markdown: str) -> dict[str, str]:
+    references: dict[str, str] = {}
+    for match in re.finditer(r"^\[([^\]]+)\]:\s*(\S+)", markdown, flags=re.MULTILINE):
+        references[_normalize_reference_id(match.group(1))] = match.group(2).strip()
+    return references
+
+
+def _normalize_reference_id(reference_id: str) -> str:
+    return re.sub(r"\s+", " ", reference_id.strip()).lower()
 
 
 def _unique_filename(filename: str, used_names: set[str]) -> str:
