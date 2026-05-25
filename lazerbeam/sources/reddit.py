@@ -23,7 +23,10 @@ class RedditProvider(SourceProvider):
         if not isinstance(data, list) or not data:
             raise ValueError("Reddit post response was not in the expected format.")
 
-        post = data[0]["data"]["children"][0]["data"]
+        try:
+            post = data[0]["data"]["children"][0]["data"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise ValueError("Reddit post response was not in the expected format.") from exc
         comments = []
         if profile.include_comments and len(data) > 1:
             comments = self._extract_comments(data[1]["data"]["children"], profile.max_comments)
