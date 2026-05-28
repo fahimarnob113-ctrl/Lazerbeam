@@ -1,3 +1,4 @@
+
 # Lazerbeam Build Plan
 
 ## What Lazerbeam Is
@@ -6,13 +7,7 @@ Lazerbeam is a Windows desktop app that saves online content into an Obsidian va
 
 The basic flow:
 
-```text
-Paste link
--> Lazerbeam understands the source
--> Lazerbeam fetches the content
--> Lazerbeam organizes it
--> Lazerbeam saves clean Markdown notes into Obsidian
-```
+`Paste link -> Lazerbeam understands the source -> Lazerbeam fetches the content -> Lazerbeam organizes it -> Lazerbeam saves clean Markdown notes into Obsidian`
 
 The first supported sources should be:
 
@@ -43,19 +38,13 @@ Lazerbeam should automatically understand:
 
 The ideal user experience:
 
-```text
-Paste link.
-Click capture.
-Done.
-```
+`Paste link. Click capture. Done.`
 
 ## Important Note About The Browser URL
 
 The URL below is for a future browser extension/local server feature:
 
-```text
-http://127.0.0.1:28777/capture
-```
+`http://127.0.0.1:28777/capture`
 
 It will show "site can't be reached" until the desktop app has a local capture server.
 
@@ -63,88 +52,11 @@ That should be built later, not at the start.
 
 ## Recommended Project Structure
 
-```text
-Lazerbeam/
-  README.md
-  CHANGELOG.md
-  LICENSE
-  requirements.txt
-  .gitignore
-  app.py
-
-  lazerbeam/
-    __init__.py
-    config.py
-    models.py
-    url_utils.py
-    capture_pipeline.py
-    organizer.py
-    obsidian_writer.py
-    media_downloader.py
-    markdown_cleaner.py
-    history.py
-    templates.py
-    profiles.py
-    daily_notes.py
-    logging_setup.py
-
-    sources/
-      __init__.py
-      base.py
-      github.py
-      reddit.py
-
-    ui/
-      __init__.py
-      main_window.py
-      settings_panel.py
-      history_panel.py
-      queue_panel.py
-
-  templates/
-    reddit-post.md
-    github-repo.md
-    github-section.md
-    generic-capture.md
-
-  tests/
-    fixtures/
-    golden/
-    test_url_utils.py
-    test_markdown_cleaner.py
-    test_obsidian_writer.py
-    test_history.py
-    test_templates.py
-    test_organizer.py
-    test_github_heading_splitter.py
-
-  docs/
-    release-checklist.md
-    regression-urls.md
-    adr/
-
-  scripts/
-    build_exe.ps1
-```
+`Lazerbeam/ README.md CHANGELOG.md LICENSE requirements.txt .gitignore app.py lazerbeam/ __init__.py config.py models.py url_utils.py capture_pipeline.py organizer.py obsidian_writer.py media_downloader.py markdown_cleaner.py history.py templates.py profiles.py daily_notes.py logging_setup.py sources/ __init__.py base.py github.py reddit.py ui/ __init__.py main_window.py settings_panel.py history_panel.py queue_panel.py templates/ reddit-post.md github-repo.md github-section.md generic-capture.md tests/ fixtures/ golden/ test_url_utils.py test_markdown_cleaner.py test_obsidian_writer.py test_history.py test_templates.py test_organizer.py test_github_heading_splitter.py docs/ release-checklist.md regression-urls.md adr/ scripts/ build_exe.ps1`
 
 ## Main App Flow
 
-```text
-URL or URL list
--> queue parser
--> clean URLs
--> duplicate check
--> detect source provider
--> fetch content
--> normalize into CapturedItem
--> automatic organizer decides where things go
--> apply capture profile
--> download media
--> render Markdown template
--> write note to Obsidian
--> update history
--> optionally backlink daily note
-```
+`URL or URL list -> queue parser -> clean URLs -> duplicate check -> detect source provider -> fetch content -> normalize into CapturedItem -> automatic organizer decides where things go -> apply capture profile -> download media -> render Markdown template -> write note to Obsidian -> update history -> optionally backlink daily note`
 
 ## Main Data Models
 
@@ -152,69 +64,31 @@ URL or URL list
 
 Represents captured content before it is written to Obsidian.
 
-```text
-source
-title
-author
-url
-body
-created_at
-captured_at
-comments
-media
-metadata
-tags
-```
+`source title author url body created_at captured_at comments media metadata tags`
 
 ### OutputPlan
 
 Created by the automatic organizer.
 
-```text
-note_path
-media_folder
-index_note_path
-daily_note_path
-tags
-naming_strategy
-duplicate_strategy
-```
+`note_path media_folder index_note_path daily_note_path tags naming_strategy duplicate_strategy`
 
 ### CaptureProfile
 
 Controls how much content to save.
 
-```text
-name
-include_media
-include_comments
-max_images
-max_comments
-save_mode
-append_daily_note
-```
+`name include_media include_comments max_images max_comments save_mode append_daily_note`
 
 ### CaptureHistoryEntry
 
 Used for history and duplicate detection.
 
-```text
-url
-cleaned_url
-source
-title
-note_path
-captured_at
-status
-```
+`url cleaned_url source title note_path captured_at status`
 
 ## Automatic Organization
 
 Add a module:
 
-```text
-lazerbeam/organizer.py
-```
+`lazerbeam/organizer.py`
 
 Its job is to decide where captured content belongs.
 
@@ -222,76 +96,35 @@ Its job is to decide where captured content belongs.
 
 Use subreddit first.
 
-```text
-Vault/
-  reddit-notes/
-    Obsidian/
-      Post Title.md
-```
+`Vault/ reddit-notes/ Obsidian/ Post Title.md`
 
 Megathreads:
 
-```text
-Vault/
-  reddit-notes/
-    Obsidian/
-      megathreads/
-        Post Title.md
-```
+`Vault/ reddit-notes/ Obsidian/ megathreads/ Post Title.md`
 
 Media:
 
-```text
-Vault/
-  reddit-media/
-    Obsidian/
-      image.jpg
-```
+`Vault/ reddit-media/ Obsidian/ image.jpg`
 
 Tags:
 
-```yaml
-tags:
-  - lazerbeam
-  - reddit
-  - reddit/Obsidian
-```
+`tags: - lazerbeam - reddit - reddit/Obsidian`
 
 ### GitHub Organization
 
 Use owner and repo.
 
-```text
-Vault/
-  github-notes/
-    owner/
-      repo-name/
-        repo-name - Index.md
-        README.md
-        Installation.md
-        Usage.md
-        _images/
-```
+`Vault/ github-notes/ owner/ repo-name/ repo-name - Index.md README.md Installation.md Usage.md _images/`
 
 Tags:
 
-```yaml
-tags:
-  - lazerbeam
-  - github
-  - repo/owner/repo-name
-```
+`tags: - lazerbeam - github - repo/owner/repo-name`
 
 ### Future Web Organization
 
 Use domain.
 
-```text
-Vault/
-  web-notes/
-    example.com/
-      Article Title.md
-```
+`Vault/ web-notes/ example.com/ Article Title.md`
 
 ## Organization Modes
 
@@ -305,10 +138,7 @@ Lazerbeam decides folders, filenames, tags, and media locations automatically.
 
 Everything goes into:
 
-```text
-Vault/
-  lazerbeam-inbox/
-```
+`Vault/ lazerbeam-inbox/`
 
 Good for fast saving.
 
@@ -322,11 +152,7 @@ This option stays available even though Auto Mode is the default.
 
 Organize by platform:
 
-```text
-reddit-notes/
-github-notes/
-web-notes/
-```
+`reddit-notes/ github-notes/ web-notes/`
 
 ### Topic Mode
 
@@ -334,12 +160,7 @@ Future mode.
 
 Organize by topic, such as:
 
-```text
-AI/
-Programming/
-Obsidian/
-Research/
-```
+`AI/ Programming/ Obsidian/ Research/`
 
 This can use metadata, tags, or AI later.
 
@@ -486,7 +307,7 @@ Done when:
 
 - sample captures create valid Obsidian notes
 - existing notes are appended, not overwritten
-- images use `![[filename.jpg]]`
+- images use ![[filename.jpg]]
 
 ### Phase 5: GitHub Provider
 
@@ -501,7 +322,7 @@ Build:
 - heading-based splitting
 - nested folders from headings
 - relative image URL resolution
-- image downloads into `_images`
+- image downloads into _images
 - repo index note
 
 Done when:
@@ -576,14 +397,14 @@ Build:
 
 - app icon
 - PyInstaller build script
-- packaged `.exe`
+- packaged .exe
 - tray support
 - portable config behavior
 - release folder cleanup
 
 Done when:
 
-- the `.exe` works on Windows without Python
+- the .exe works on Windows without Python
 
 ### Phase 10: Visual Redesign
 
@@ -626,7 +447,7 @@ Goal: capture directly from the browser.
 Build:
 
 - desktop local server
-- `POST /capture`
+- POST /capture
 - Chrome extension
 - Firefox extension
 - selected text capture
@@ -635,9 +456,7 @@ Build:
 
 Only in this phase should this URL work:
 
-```text
-http://127.0.0.1:28777/capture
-```
+`http://127.0.0.1:28777/capture`
 
 ## Testing Plan
 
@@ -658,27 +477,13 @@ Test small parts:
 
 Use local sample files instead of live internet.
 
-```text
-tests/
-  fixtures/
-    reddit_post.json
-    reddit_comments.json
-    github_readme.md
-    github_docs_page.md
-    github_repo_tree.json
-```
+`tests/ fixtures/ reddit_post.json reddit_comments.json github_readme.md github_docs_page.md github_repo_tree.json`
 
 ### Golden Markdown Tests
 
 Compare generated Markdown to expected Markdown.
 
-```text
-tests/
-  golden/
-    reddit_post_expected.md
-    github_repo_index_expected.md
-    github_section_expected.md
-```
+`tests/ golden/ reddit_post_expected.md github_repo_index_expected.md github_section_expected.md`
 
 Use this to catch accidental output changes.
 
@@ -686,13 +491,7 @@ Use this to catch accidental output changes.
 
 Use a fake Obsidian vault while developing.
 
-```text
-test-vault/
-  reddit-notes/
-  reddit-media/
-  github-notes/
-  lazerbeam-inbox/
-```
+`test-vault/ reddit-notes/ reddit-media/ github-notes/ lazerbeam-inbox/`
 
 Do not test new code on a real vault first.
 
@@ -700,28 +499,15 @@ Do not test new code on a real vault first.
 
 When something breaks, check the pipeline in order:
 
-```text
-URL cleaning
--> source detection
--> fetching content
--> media download
--> organization
--> template rendering
--> file writing
-```
+`URL cleaning -> source detection -> fetching content -> media download -> organization -> template rendering -> file writing`
 
 Logs should go here:
 
-```text
-logs/lazerbeam.log
-```
+`logs/lazerbeam.log`
 
 Failed captures should create reports here:
 
-```text
-Vault/
-  lazerbeam-failures/
-```
+`Vault/ lazerbeam-failures/`
 
 Failure reports should include:
 
@@ -737,16 +523,7 @@ Failure reports should include:
 
 Use this loop:
 
-```text
-Pick one small feature
--> write or update tests
--> build the feature
--> run tests
--> test with fake vault
--> inspect generated Markdown
--> check logs
--> commit
-```
+`Pick one small feature -> write or update tests -> build the feature -> run tests -> test with fake vault -> inspect generated Markdown -> check logs -> commit`
 
 ## Commit Rules
 
@@ -754,22 +531,11 @@ Use small clear commits.
 
 Good examples:
 
-```text
-Add provider interface and captured item model
-Implement automatic organizer rules
-Add append-only Obsidian writer
-Add GitHub README fixture tests
-Support Reddit post URL cleaning
-Add capture history duplicate detection
-```
+`Add provider interface and captured item model Implement automatic organizer rules Add append-only Obsidian writer Add GitHub README fixture tests Support Reddit post URL cleaning Add capture history duplicate detection`
 
 Avoid vague commits:
 
-```text
-updates
-fix stuff
-big changes
-```
+`updates fix stuff big changes`
 
 ## Release Checklist
 
@@ -777,7 +543,7 @@ Before release:
 
 - tests pass
 - manual QA is complete
-- packaged `.exe` is tested
+- packaged .exe is tested
 - README is updated
 - CHANGELOG is updated
 - known issues are listed
@@ -803,13 +569,6 @@ Do not put everything inside the GUI file.
 
 The app should be shaped like this:
 
-```text
-UI
--> Capture Engine
--> Source Provider
--> Organizer
--> Template Renderer
--> Obsidian Writer
-```
+`UI -> Capture Engine -> Source Provider -> Organizer -> Template Renderer -> Obsidian Writer`
 
 This keeps the app easy to grow.
