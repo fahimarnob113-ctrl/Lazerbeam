@@ -141,4 +141,39 @@ def run_app() -> None:
             
     tabview.configure(command=on_tab_changed)
     
+    try:
+        app.iconbitmap("icon.ico")
+    except Exception:
+        pass
+        
+    def withdraw_window():
+        import pystray
+        from PIL import Image
+        app.withdraw()
+        
+        try:
+            image = Image.open("icon.ico")
+        except FileNotFoundError:
+            image = Image.new('RGB', (64, 64), color='blue')
+            
+        def show_window(icon, item):
+            icon.stop()
+            app.after(0, app.deiconify)
+            
+        def quit_window(icon, item):
+            icon.stop()
+            app.quit()
+            
+        menu = pystray.Menu(
+            pystray.MenuItem('Show', show_window, default=True),
+            pystray.MenuItem('Quit', quit_window)
+        )
+        icon = pystray.Icon("Lazerbeam", image, "Lazerbeam", menu)
+        icon.run()
+
+    def on_closing():
+        threading.Thread(target=withdraw_window, daemon=True).start()
+
+    app.protocol("WM_DELETE_WINDOW", on_closing)
+    
     app.mainloop()
